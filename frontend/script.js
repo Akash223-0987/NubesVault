@@ -1,6 +1,14 @@
 const API_URL = "http://127.0.0.1:5000";
 
 // =====================
+// JWT Check
+// =====================
+const token = localStorage.getItem("token");
+if (!token) {
+  window.location.href = "login.html";
+}
+
+// =====================
 // File Uploader
 // =====================
 function FileUploader({ onUploadComplete }) {
@@ -29,6 +37,7 @@ function FileUploader({ onUploadComplete }) {
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_URL}/upload`, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -76,10 +85,7 @@ function FileUploader({ onUploadComplete }) {
 }
 
 // =====================
-// File List - FIXED VERSION
-// =====================
-// =====================
-// File List - UPDATED VERSION
+// File List
 // =====================
 function FileList({ refreshTrigger }) {
   const [files, setFiles] = React.useState([]);
@@ -88,12 +94,14 @@ function FileList({ refreshTrigger }) {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/files`);
+      const res = await fetch(`${API_URL}/files`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       const data = await res.json();
-      console.log("Files from server:", data); // Debug line
       setFiles(data);
     } catch (err) {
       console.error("Error fetching files:", err);
+      setFiles([]);
     }
     setLoading(false);
   };
@@ -105,64 +113,56 @@ function FileList({ refreshTrigger }) {
   const handleDelete = async (file) => {
     const displayName = getDisplayName(file);
     if (!window.confirm(`Delete "${displayName}"?`)) return;
-    
+
     try {
-      await fetch(`${API_URL}/delete/${encodeURIComponent(file)}`, { 
-        method: "DELETE" 
+      await fetch(`${API_URL}/delete/${encodeURIComponent(file)}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
       });
       fetchFiles();
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("Delete failed");
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("❌ Delete failed!");
     }
   };
 
   const handleDownload = (file) => {
-    // Use encodeURIComponent to handle spaces in filenames
     const encodedFile = encodeURIComponent(file);
     const url = `${API_URL}/download/${encodedFile}`;
-    console.log("Download URL:", url); // Debug line
-    
-    // Open in new tab - this should work now with the backend fix
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
-  // Helper function to extract original filename
-  const getDisplayName = (filename) => {
-    return filename.split('-').slice(1).join('-');
-  };
+  const getDisplayName = (filename) => filename.split("-").slice(1).join("-");
 
-  // Remove duplicates just in case
-  const uniqueFiles = [...new Set(files)];
+  return (
+    <div className="file-list">
+      <h3>📂 Uploaded Files</h3>
+      {loading ? (
+        <div className="spinner"></div>
+      ) : files.length === 0 ? (
+        <p className="empty-msg">No files uploaded yet.</p>
+      ) : (
+        <ul>
+          {[...new Set(files)].map((file, idx) => (
+            <li key={idx}>
+              <div>
+                <strong>Display:</strong> {getDisplayName(file)}<br />
+                <strong>Stored:</strong> {file}
+              </div>
+              <div className="file-actions">
+                <button onClick={() => handleDownload(file)}>⬇️</button>
+                <button onClick={() => handleDelete(file)}>🗑️</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
- // TEMPORARY - For debugging only
-return (
-  <div className="file-list">
-    <h3>📂 Uploaded Files</h3>
-    {loading ? (
-      <div className="spinner"></div>
-    ) : uniqueFiles.length === 0 ? (
-      <p className="empty-msg">No files uploaded yet.</p>
-    ) : (
-      <ul>
-        {uniqueFiles.map((file, index) => (
-          <li key={index}>
-            <div>
-              <strong>Display:</strong> {getDisplayName(file)}<br/>
-              <strong>Stored:</strong> {file}
-            </div>
-            <div className="file-actions">
-              <button onClick={() => handleDownload(file)}>⬇️</button>
-              <button onClick={() => handleDelete(file)}>🗑️</button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-);}
 // =====================
-// Root App
+// Main App
 // =====================
 function App() {
   const [refresh, setRefresh] = React.useState(false);
@@ -171,34 +171,43 @@ function App() {
   const refreshFiles = () => setRefresh((r) => !r);
 
   React.useEffect(() => {
-    fetch(`${API_URL}/files`)
-      .then((res) => res.json())
-      .then((files) => {
-        const totalSize = files.length * 1.5; // estimate 1.5 MB/file
-        setStorageUsed(Math.min(totalSize, 100));
+    fetch(`${API_URL}/files`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(files => {
+        const totalSize = files.length * 1.5; // MB
+        setStorageUsed(Math.min(totalSize, 1024));
       });
   }, [refresh]);
 
   return (
-    <div>
-      <h1>☁️ Cloud Storage Lite</h1>
-      <p style={{ textAlign: "center" }}>
-        Storage used: {storageUsed.toFixed(1)} MB / 100 MB
-      </p>
-      <div className="progress-bar">
-        <div
-          className="progress"
-          style={{ width: `${(storageUsed / 100) * 100}%` }}
-        ></div>
+    <div className="dashboard">
+      <div className="storage-container">
+        <p>Storage used: {storageUsed.toFixed(1)} MB / 1024 MB</p>
+        <div className="progress-bar">
+          <div className="progress" style={{ width: `${(storageUsed / 1024) * 100}%` }}></div>
+        </div>
       </div>
+
       <FileUploader onUploadComplete={refreshFiles} />
       <FileList refreshTrigger={refresh} />
+
+      <button style={{ marginTop: "20px" }} onClick={logout}>Logout</button>
     </div>
   );
 }
 
 // =====================
-// Render
+// Logout
+// =====================
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
+}
+
+// =====================
+// Render App
 // =====================
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);

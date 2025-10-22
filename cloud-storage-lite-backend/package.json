@@ -1,14 +1,13 @@
 {
-  "name": "cloud-storage-lite-backend",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Cloud Storage Lite Backend",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
+  "author": "Akash",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.2",

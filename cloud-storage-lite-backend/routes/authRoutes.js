@@ -1,63 +1,33 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const authMiddleware = require('../middleware/authMiddleware');
+// routes/auth.js
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 const router = express.Router();
 
-// Signup
-router.post('/signup', async (req, res) => {
+router.post("/google-login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ msg: 'Email and password required' });
+    const { name, email, googleId } = req.body;
+    if (!email) return res.status(400).json({ msg: "Email required" });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ msg: 'User already exists' });
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({ name: name || "Google User", email, googleId });
+    }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(password, salt);
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    const user = new User({ email, password: hashed });
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.status(201).json({ token, user: { id: user._id, email: user.email } });
+    res.json({
+      token,
+      user: { id: user._id, name: user.name, email: user.email },
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ msg: 'Email and password required' });
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, email: user.email } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Protected test route
-router.get('/me', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-password');
-    res.json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Server error' });
+    console.error("Google login server error:", err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
