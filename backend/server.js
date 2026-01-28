@@ -1,33 +1,53 @@
-const express = require("express");
-// const cors = require("cors");
-const multer = require("multer");
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const mongoose = require("mongoose");
+const passport = require("passport");
+const session = require("express-session");
+require("dotenv").config();
+const authMiddleware = require("./middleware/authMiddleware");
+const authRoutes = require("./routes/authRoutes");
+require("./passportConfig");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// ✅ Enable CORS for all routes
-const cors = require("cors");
-app.use(cors()); // enable CORS for all routes
-
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "supersecret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Error:", err));
+
+app.use("/auth", authRoutes);
 
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
-
-// ✅ Serve uploads as static (optional, not used for download)
 app.use("/uploads", express.static(UPLOAD_DIR));
 
-// ✅ Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
-// ✅ Upload route
-app.post("/upload", upload.single("file"), (req, res) => {
+app.post("/upload", authMiddleware, upload.single("file"), (req, res) => {
   res.json({
     success: true,
     message: "File uploaded successfully!",
@@ -35,16 +55,12 @@ app.post("/upload", upload.single("file"), (req, res) => {
   });
 });
 
-// ✅ List files
-// ✅ List files
-app.get("/files", (req, res) => {
+app.get("/files", authMiddleware, (req, res) => {
   const files = fs.readdirSync(UPLOAD_DIR);
-  console.log("Files in uploads folder:", files); // Add this line
   res.json(files);
 });
 
-// ✅ Delete file
-app.delete("/delete/:filename", (req, res) => {
+app.delete("/delete/:filename", authMiddleware, (req, res) => {
   const filePath = path.join(UPLOAD_DIR, req.params.filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
@@ -54,61 +70,34 @@ app.delete("/delete/:filename", (req, res) => {
   }
 });
 
-// ✅ Download route with CORS
-// ✅ Download route - FIXED VERSION
-// ✅ Fixed Download route
-app.get("/download/:filename", (req, res) => {
-  try {
-    // Decode the filename to handle spaces and special characters
-    const encodedFilename = req.params.filename;
-    const decodedFilename = decodeURIComponent(encodedFilename);
-    
-    const filePath = path.join(UPLOAD_DIR, decodedFilename);
-    
-    console.log("Download attempt:", {
-      encoded: encodedFilename,
-      decoded: decodedFilename,
-      filePath: filePath,
-      fileExists: fs.existsSync(filePath)
-    });
-    
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.log("❌ File not found:", filePath);
-      return res.status(404).json({ error: "File not found" });
-    }
-    
-    // Get file stats
-    const fileStats = fs.statSync(filePath);
-    console.log("File stats:", {
-      size: fileStats.size,
-      isFile: fileStats.isFile()
-    });
-    
-    // Get original filename for download (without timestamp)
-    const originalName = decodedFilename.split('-').slice(1).join('-');
-    
-    // Set headers for download
-    res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    
-    // Create read stream and pipe to response
-    const fileStream = fs.createReadStream(filePath);
-    
-    fileStream.pipe(res);
-    
-    fileStream.on('error', (error) => {
-      console.error('Stream error:', error);
-      res.status(500).json({ error: 'Error streaming file' });
-    });
-    
-  } catch (error) {
-    console.error('Download route error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+app.get("/download/:filename", authMiddleware, (req, res) => {
+  const decodedFilename = decodeURIComponent(req.params.filename);
+  const filePath = path.join(UPLOAD_DIR, decodedFilename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "File not found" });
   }
+  const originalName = decodedFilename.split("-").slice(1).join("-");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${originalName}\"`);
+  const stream = fs.createReadStream(filePath);
+  stream.on("error", () => res.status(500).end());
+  stream.pipe(res);
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    successRedirect: "http://localhost:5000/",
+    failureRedirect: "http://localhost:5000/auth/login.html",
+  })
+);
+
+app.get("/auth/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ message: "Logout failed" });
+    res.json({ success: true, message: "Logged out successfully" });
+  });
 });
- 
+
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

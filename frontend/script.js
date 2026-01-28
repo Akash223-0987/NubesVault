@@ -5,7 +5,7 @@ const API_URL = "http://127.0.0.1:5000";
 // =====================
 const token = localStorage.getItem("token");
 if (!token) {
-  window.location.href = "login.html";
+  window.location.href = "auth/login.html";
 }
 
 // =====================
@@ -203,7 +203,7 @@ function App() {
 // =====================
 function logout() {
   localStorage.removeItem("token");
-  window.location.href = "login.html";
+  window.location.href = "auth/login.html";
 }
 
 // =====================
