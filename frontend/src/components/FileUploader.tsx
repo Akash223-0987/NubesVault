@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from '../api';
 
 interface FileUploaderProps {
   onUploadComplete: () => void;
@@ -55,7 +56,7 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
     
     // Using XMLHttpRequest for progress
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:5000/upload', true);
+    xhr.open('POST', `${API_URL}/upload`, true);
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
     xhr.upload.onprogress = (event) => {

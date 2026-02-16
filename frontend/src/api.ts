@@ -2,7 +2,7 @@
 // Helper for Authenticated Fetch
 // Adds token from localStorage to headers automatically
 
-const API_URL = "http://localhost:5000";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const api = {
   get: async (endpoint: string) => {

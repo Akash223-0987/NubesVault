@@ -76,7 +76,7 @@ router.get(
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
     
     // Redirect to frontend with token
-    res.redirect(`http://localhost:5173/oauth-callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+    res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/oauth-callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
       email: req.user.email,
       name: req.user.name
     }))}`);

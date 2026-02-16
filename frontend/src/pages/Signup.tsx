@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, API_URL } from '../api';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -31,7 +31,7 @@ export default function Signup() {
   };
 
   const handleGoogleSignup = () => {
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = `${API_URL}/auth/google`;
   };
 
   return (

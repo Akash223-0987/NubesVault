@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
-
-const API_URL = "http://localhost:5000";
+import { api, API_URL } from '../api';
 
 interface FileListProps {
   refreshTrigger: boolean;
