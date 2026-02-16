@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { api } from '../api';
 
 interface FileUploaderProps {
   onUploadComplete: () => void;
@@ -10,10 +9,31 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
   const [message, setMessage] = useState('');
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      setMessage('');
+      setProgress(0);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
       setMessage('');
       setProgress(0);
     }
@@ -49,11 +69,8 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
       if (xhr.status === 200) {
         setMessage('✅ Upload complete!');
         setFile(null);
-        // Reset input? Difficult without ref.
-        const fileInput = document.getElementById('file-input') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-        
         onUploadComplete();
+        setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage('❌ Upload failed!');
       }
@@ -68,42 +85,76 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl text-center shadow-lg transition-transform hover:shadow-xl w-full max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold mb-4 text-gray-800">Upload Files</h2>
+    <div className="glass-card bg-white p-6 rounded-2xl w-full text-center hover:shadow-xl transition-all duration-300 border border-gray-100">
+      <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center justify-center gap-2">
+        <i className="fas fa-cloud-upload-alt text-indigo-500"></i> Upload File
+      </h2>
       
-      <div className="flex flex-col items-center gap-4">
+      <div 
+        className={`
+          border-2 border-dashed rounded-xl p-8 transition-all duration-300 flex flex-col items-center justify-center gap-4 cursor-pointer relative bg-white/40
+          ${isDragging 
+            ? 'border-indigo-500 bg-indigo-50/50' 
+            : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50/50'}
+        `}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input 
           id="file-input"
           type="file" 
           onChange={handleFileChange}
-          className="block w-full text-sm text-slate-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-violet-50 file:text-violet-700
-            hover:file:bg-violet-100
-          "
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         
-        <button 
-          onClick={handleUpload}
-          className="bg-[#007bff] text-white py-3 px-6 rounded-xl font-semibold transition-all hover:bg-[#0056b3] hover:scale-105 active:scale-95 disabled:opacity-50"
-          disabled={isUploading}
-        >
-          {isUploading ? 'Uploading...' : 'Upload'}
-        </button>
+        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-2 pointer-events-none">
+          {file ? <i className="fas fa-file-alt text-2xl"></i> : <i className="fas fa-cloud-upload-alt text-2xl"></i>}
+        </div>
+        
+        <div className="pointer-events-none">
+          {file ? (
+            <p className="font-medium text-indigo-900 truncate max-w-[200px]">{file.name}</p>
+          ) : (
+            <>
+              <p className="font-medium text-gray-700">Drag & Drop or Click</p>
+              <p className="text-xs text-gray-400 mt-1">Supports all file types</p>
+            </>
+          )}
+        </div>
       </div>
 
+      <button 
+        onClick={handleUpload}
+        className={`
+          w-full mt-6 py-3 px-6 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-[0.98]
+          ${!file || isUploading 
+            ? 'bg-gray-400 cursor-not-allowed shadow-none' 
+            : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 hover:shadow-indigo-500/30'}
+        `}
+        disabled={!file || isUploading}
+      >
+        {isUploading ? (
+          <span className="flex items-center justify-center gap-2">
+            <i className="fas fa-spinner fa-spin"></i> Uploading...
+          </span>
+        ) : 'Upload File'}
+      </button>
+
       {isUploading && (
-        <div className="w-full bg-gray-200 rounded-full h-4 mt-4 overflow-hidden">
+        <div className="w-full bg-gray-100/50 rounded-full h-2 mt-4 overflow-hidden border border-gray-100">
           <div 
-            className="bg-gradient-to-r from-[#00c6ff] to-[#007bff] h-4 rounded-full transition-all duration-300 ease-out" 
+            className="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-300 ease-out" 
             style={{ width: `${progress}%` }}
           ></div>
         </div>
       )}
 
-      {message && <p className="mt-4 text-[#007bff] font-medium">{message}</p>}
+      {message && (
+        <div className={`mt-4 text-sm font-medium p-2 rounded-lg animate-fade-in ${message.includes('complete') ? 'text-green-600 bg-green-50' : message.includes('failed') || message.includes('error') ? 'text-red-600 bg-red-50' : 'text-indigo-600 bg-indigo-50'}`}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,12 +3,30 @@
 :root {
   --color-primary: #007bff;
   --color-primary-dark: #0056b3;
-  --font-heading: "Poppins", sans-serif;
+  --font-heading: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
 }
 
 body {
-  @apply min-h-screen font-sans text-gray-800 m-0 p-0;
-  background: linear-gradient(135deg, #89f7fe, #66a6ff);
+  @apply min-h-screen font-sans text-gray-800 m-0 p-0 antialiased;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: var(--font-body);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 /* Spinner Animation */
@@ -19,4 +37,18 @@ body {
 .spinner {
   @apply border-4 border-gray-100 border-t-blue-500 rounded-full w-7 h-7 mx-auto my-2;
   animation: spin 1s linear infinite;
+}
+
+/* Smooth fade in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.preview-controls {
+  z-index: 9999;
 }

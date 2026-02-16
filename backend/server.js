@@ -92,7 +92,72 @@ app.get("/download/:filename", authMiddleware, (req, res) => {
   stream.pipe(res);
 });
 
+app.get("/view/:filename", authMiddleware, (req, res) => {
+  const decodedFilename = decodeURIComponent(req.params.filename);
+  const filePath = path.join(UPLOAD_DIR, decodedFilename);
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "File not found" });
+  }
 
+  // Determine content type based on extension
+  const ext = path.extname(decodedFilename).toLowerCase();
+  let contentType = 'application/octet-stream';
+  
+  const mimeTypes = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.txt': 'text/plain',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mp3': 'audio/mpeg',
+    '.json': 'application/json',
+    '.html': 'text/html'
+  };
+
+  if (mimeTypes[ext]) {
+    contentType = mimeTypes[ext];
+  }
+
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `inline; filename="${decodedFilename}"`);
+  
+  const stream = fs.createReadStream(filePath);
+  stream.on('error', () => res.status(500).end());
+  stream.pipe(res);
+});
+
+
+
+app.get("/usage", authMiddleware, (req, res) => {
+  let totalSize = 0;
+  try {
+    if (fs.existsSync(UPLOAD_DIR)) {
+      const files = fs.readdirSync(UPLOAD_DIR);
+      files.forEach(file => {
+        const filePath = path.join(UPLOAD_DIR, file);
+        if (fs.existsSync(filePath)) {
+            const stats = fs.statSync(filePath);
+            totalSize += stats.size;
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Error calculating storage:", err);
+    return res.status(500).json({ error: "Failed to calculate storage" });
+  }
+
+  // Define a storage limit (e.g., 1 GB)
+  const limit = 1 * 1024 * 1024 * 1024; // 1 GB in bytes
+
+  res.json({
+    used: totalSize,
+    limit: limit
+  });
+});
 
 app.get("/auth/logout", (req, res) => {
   req.logout((err) => {
