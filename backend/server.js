@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, "../frontend")));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
@@ -30,10 +30,19 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+console.log("Attempting to connect to MongoDB...");
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error("MongoDB Error:", err));
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  })
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:");
+    console.error(err.message);
+    if (err.message.includes("ETIMEDOUT") || err.message.includes("ENOTFOUND")) {
+      console.error("Check your internet connection and MONGO_URI in .env");
+    }
+  });
 
 app.use("/auth", authRoutes);
 
@@ -83,15 +92,7 @@ app.get("/download/:filename", authMiddleware, (req, res) => {
   stream.pipe(res);
 });
 
-app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: "http://localhost:5000/",
-    failureRedirect: "http://localhost:5000/auth/login.html",
-  })
-);
 
 app.get("/auth/logout", (req, res) => {
   req.logout((err) => {
