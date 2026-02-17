@@ -86,17 +86,17 @@ export default function FileUploader({ onUploadComplete }: FileUploaderProps) {
   };
 
   return (
-    <div className="glass-card bg-white p-6 rounded-2xl w-full text-center hover:shadow-xl transition-all duration-300 border border-gray-100">
+    <div className="glass-card bg-white/40 backdrop-blur-xl p-6 rounded-2xl w-full text-center hover:shadow-xl transition-all duration-300 border border-white/40">
       <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center justify-center gap-2">
         <i className="fas fa-cloud-upload-alt text-indigo-500"></i> Upload File
       </h2>
       
       <div 
         className={`
-          border-2 border-dashed rounded-xl p-8 transition-all duration-300 flex flex-col items-center justify-center gap-4 cursor-pointer relative bg-white/40
+          border-2 border-dashed rounded-xl p-8 transition-all duration-300 flex flex-col items-center justify-center gap-4 cursor-pointer relative bg-white/20
           ${isDragging 
             ? 'border-indigo-500 bg-indigo-50/50' 
-            : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50/50'}
+            : 'border-white/40 hover:border-indigo-400/70 hover:bg-white/40'}
         `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}

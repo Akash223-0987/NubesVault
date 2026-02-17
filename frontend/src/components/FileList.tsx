@@ -188,62 +188,69 @@ export default function FileList({ refreshTrigger }: FileListProps) {
       )}
 
       {files.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <i className="fas fa-folder-open text-gray-400 text-2xl"></i>
+        <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-indigo-200/50 rounded-xl bg-white/20 backdrop-blur-sm">
+          <div className="w-16 h-16 bg-white/60 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <i className="fas fa-folder-open text-indigo-400 text-2xl"></i>
           </div>
-          <p className="text-gray-500 font-medium">No files uploaded yet</p>
+          <p className="text-gray-600 font-medium">No files uploaded yet</p>
           <p className="text-sm text-gray-400 mt-1">Upload a file to get started</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...new Set(files)].map((file, idx) => (
-            <li 
+            <div 
               key={idx} 
-              className="group flex justify-between items-center bg-white hover:bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
+              className="group relative glass-card p-4 rounded-2xl border border-white/40 hover:border-indigo-300/50 bg-white/40 hover:bg-white/70 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between overflow-hidden"
             >
-              <div className="flex items-center gap-4 overflow-hidden">
-                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0">
-                  {isPreviewable(file) ? <i className="fas fa-image text-lg"></i> : <i className="fas fa-file-alt text-lg"></i>}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-semibold text-gray-800 truncate block group-hover:text-indigo-600 transition-colors">
+              {/* Top Section: Icon & Actions */}
+              <div className="flex justify-between items-start mb-3">
+                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-50 to-white shadow-inner flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform duration-300 border border-white/60">
+                    {isPreviewable(file) ? <i className="fas fa-image text-xl"></i> : <i className="fas fa-file-alt text-xl"></i>}
+                 </div>
+                 
+                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-x-2 group-hover:translate-x-0">
+                    {isPreviewable(file) && (
+                      <button 
+                        onClick={() => handlePreview(file)}
+                        className="w-8 h-8 rounded-full bg-white/80 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 flex items-center justify-center transition-colors shadow-sm"
+                        title="Preview"
+                      >
+                        <i className="fas fa-eye text-xs"></i>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleDownload(file)}
+                      className="w-8 h-8 rounded-full bg-white/80 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 flex items-center justify-center transition-colors shadow-sm"
+                      title="Download"
+                    >
+                      <i className="fas fa-download text-xs"></i>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(file)}
+                      className="w-8 h-8 rounded-full bg-white/80 hover:bg-red-50 text-gray-500 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
+                      title="Delete"
+                    >
+                      <i className="fas fa-trash-alt text-xs"></i>
+                    </button>
+                 </div>
+              </div>
+
+              {/* Bottom Section: File Info */}
+              <div>
+                 <h3 className="font-semibold text-gray-800 truncate mb-1 group-hover:text-indigo-700 transition-colors" title={getDisplayName(file)}>
                     {getDisplayName(file)}
-                  </span>
-                  <span className="text-xs text-gray-500 truncate font-mono bg-gray-100/50 px-1.5 py-0.5 rounded w-fit">
-                    {file.substring(0, 8)}...
-                  </span>
-                </div>
+                 </h3>
+                 <div className="flex justify-between items-center text-xs text-gray-400">
+                    <span className="font-mono bg-indigo-50/50 px-1.5 py-0.5 rounded text-indigo-400">{file.substring(0, 8)}...</span>
+                    <span>1.2 MB</span>
+                 </div>
               </div>
               
-              <div className="flex gap-2 shrink-0 ml-4 opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100">
-                {isPreviewable(file) && (
-                  <button 
-                    onClick={() => handlePreview(file)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                    title="Preview"
-                  >
-                    <i className="fas fa-eye"></i>
-                  </button>
-                )}
-                <button 
-                  onClick={() => handleDownload(file)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                  title="Download"
-                >
-                  <i className="fas fa-download"></i>
-                </button>
-                <button 
-                  onClick={() => handleDelete(file)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  title="Delete"
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </li>
+              {/* Decorative Gradient Blob */}
+              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

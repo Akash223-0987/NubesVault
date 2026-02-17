@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const [showActivity, setShowActivity] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -19,23 +21,76 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 px-0 sm:px-6 py-4 transition-colors duration-300">
-      <nav className="glass bg-white/80 backdrop-blur-md rounded-none sm:rounded-2xl px-6 py-3 flex justify-between items-center shadow-lg mx-auto max-w-7xl border-b sm:border border-gray-100">
-        <h1 className="text-xl text-gray-800 font-bold m-0 flex items-center gap-2 tracking-tight">
-          <div className="bg-indigo-500 p-1.5 rounded-lg w-8 h-8 flex items-center justify-center shadow-md shadow-indigo-500/30">
-            <img src="/logo.svg" alt="Cloud Storage" className="w-full h-full brightness-0 invert" />
+    <>
+      <header className="sticky top-0 z-50 px-0 sm:px-6 py-4 transition-colors duration-300">
+        <nav className="glass bg-white/60 backdrop-blur-xl rounded-none sm:rounded-2xl px-6 py-3 flex justify-between items-center shadow-lg shadow-indigo-500/5 mx-auto max-w-7xl border border-white/40">
+          <h1 className="text-xl text-gray-800 font-bold m-0 flex items-center gap-2 tracking-tight">
+            <div className="bg-indigo-500 p-1.5 rounded-lg w-8 h-8 flex items-center justify-center shadow-md shadow-indigo-500/30">
+              <img src="/logo.svg" alt="NubesVault" className="w-full h-full brightness-0 invert" />
+            </div>
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">NubesVault</span>
+          </h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowActivity(true)}
+              className="w-10 h-10 rounded-xl bg-white/50 hover:bg-white/80 border border-white/60 flex items-center justify-center text-indigo-600 hover:text-indigo-800 transition-all hover:shadow-md hover:scale-105 group relative"
+              title="Activity Timeline"
+            >
+              <i className="fas fa-history text-lg group-hover:rotate-12 transition-transform"></i>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="bg-white/50 hover:bg-red-50 text-red-500 border border-red-100 py-2 px-4 rounded-xl cursor-pointer font-semibold transition-all hover:shadow-md text-sm active:scale-95 flex items-center gap-2"
+            >
+              <i className="fas fa-sign-out-alt"></i> <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
-          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">Cloud Storage</span>
-        </h1>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleLogout} 
-            className="bg-white/50 hover:bg-red-50 text-red-500 border border-red-100 py-2 px-4 rounded-xl cursor-pointer font-semibold transition-all hover:shadow-md text-sm active:scale-95 flex items-center gap-2"
+        </nav>
+      </header>
+
+      {/* Activity Timeline Modal */}
+      {showActivity && (
+        <div className="fixed inset-0 z-[100] flex justify-end" onClick={() => setShowActivity(false)}>
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-fade-in"></div>
+          <div 
+            className="relative z-10 w-full max-w-md h-full bg-white/80 backdrop-blur-2xl border-l border-white/40 shadow-2xl animate-slide-in-right flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <i className="fas fa-sign-out-alt"></i> <span className="hidden sm:inline">Logout</span>
-          </button>
+             <div className="p-6 border-b border-gray-100/50 flex justify-between items-center bg-white/40">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                    <i className="fas fa-history"></i>
+                  </span>
+                  Activity Timeline
+                </h2>
+                <button 
+                  onClick={() => setShowActivity(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100/50 hover:bg-gray-200/50 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+             </div>
+
+             <div className="flex-1 overflow-y-auto p-6 relative custom-scrollbar flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full flex items-center justify-center mb-6 relative overflow-hidden group shadow-sm border border-indigo-100">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <i className="fas fa-rocket text-4xl text-indigo-500 group-hover:scale-110 transition-transform duration-300 group-hover:-rotate-12"></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Coming Soon</h3>
+                <p className="text-gray-500 text-sm max-w-[260px] leading-relaxed">
+                  We're building a powerful timeline to track every move in your workspace. Stay tuned for updates!
+                </p>
+                
+                <div className="mt-8 flex gap-2">
+                  <span className="w-2 h-2 rounded-full bg-gray-300 animate-bounce"></span>
+                  <span className="w-2 h-2 rounded-full bg-gray-300 animate-bounce delay-75"></span>
+                  <span className="w-2 h-2 rounded-full bg-gray-300 animate-bounce delay-150"></span>
+                </div>
+             </div>
+          </div>
         </div>
-      </nav>
-    </header>
+      )}
+    </>
   );
 }

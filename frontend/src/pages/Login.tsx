@@ -6,6 +6,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -19,7 +20,7 @@ export default function Login() {
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userEmail', data.user.email);
-        navigate('/');
+        window.location.href = '/dashboard';
       } else {
         setError(data.msg || 'Login failed');
       }
@@ -41,7 +42,7 @@ export default function Login() {
            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
              <img src="/logo.svg" alt="Logo" className="w-6 h-6 file:brightness-0 invert" />
            </div>
-           <span className="text-2xl font-extrabold text-gray-900 tracking-tight">Cloud Storage</span>
+           <span className="text-2xl font-extrabold text-gray-900 tracking-tight">NubesVault</span>
         </div>
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
           Welcome back
@@ -84,19 +85,31 @@ export default function Login() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i className="fas fa-lock text-gray-400"></i>
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full pl-10 pr-10 px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+                    placeholder="••••••••"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                    >
+                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    </button>
+                  </div>
+                </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -153,14 +166,12 @@ export default function Login() {
           <p className="mt-8 text-center text-sm text-gray-500">
              Not a member?{' '}
             <a href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
-              Start a 14 day free trial
+              Sign Up
             </a>
           </p>
         </div>
         
-        <p className="mt-8 text-center text-xs text-gray-400">
-          © 2024 Cloud Storage Inc. All rights reserved.
-        </p>
+        
       </div>
     </div>
   );
