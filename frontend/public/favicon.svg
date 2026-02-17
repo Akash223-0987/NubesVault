@@ -1,14 +1,15 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="logoGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#4F46E5" />
-      <stop offset="1" stop-color="#D946EF" />
+    <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9333EA;stop-opacity:1" />
     </linearGradient>
   </defs>
   
-  <rect x="10" y="8" width="12" height="5" rx="2.5" fill="url(#logoGradient)" opacity="0.95" />
-  <rect x="5" y="14" width="22" height="5" rx="2.5" fill="url(#logoGradient)" />
-  <rect x="8" y="20" width="16" height="5" rx="2.5" fill="url(#logoGradient)" opacity="0.95" />
-  
-  <circle cx="26" cy="11" r="1.5" fill="url(#logoGradient)" opacity="0.8" />
+  <!-- Simplified "N" for favicon -->
+  <rect x="8" y="8" width="3.84" height="16" rx="1.92" fill="url(#faviconGradient)"/>
+  <path d="M11.84 9.6 L20.16 22.4 L20.16 18.56 L14.4 9.6 Z" fill="url(#faviconGradient)" opacity="0.8"/>
+  <rect x="20.16" y="8" width="3.84" height="16" rx="1.92" fill="url(#faviconGradient)"/>
+  <circle cx="9.92" y="6.4" r="0.96" fill="url(#faviconGradient)"/>
+  <circle cx="22.08" cy="25.6" r="0.96" fill="url(#faviconGradient)"/>
 </svg>

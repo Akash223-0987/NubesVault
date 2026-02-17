@@ -1,12 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [showActivity, setShowActivity] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [storageStats, setStorageStats] = useState({ used: 0, limit: 20 * 1024 * 1024 * 1024 });
+  const [userProfile, setUserProfile] = useState({ name: 'User', email: '', initial: 'U' });
 
-  const handleLogout = async () => {
+  // Fetch user profile and storage stats
+  useEffect(() => {
+    // Fetch user profile
+    api.get('/user/profile')
+      .then(res => res.json())
+      .then(data => {
+        setUserProfile({
+          name: data.name || 'User',
+          email: data.email || localStorage.getItem('userEmail') || 'user@example.com',
+          initial: (data.name || 'U').charAt(0).toUpperCase()
+        });
+      })
+      .catch(err => {
+        console.error("Failed to fetch user profile", err);
+        // Fallback to localStorage
+        const email = localStorage.getItem('userEmail') || 'user@example.com';
+        setUserProfile({
+          name: email.split('@')[0],
+          email: email,
+          initial: email.charAt(0).toUpperCase()
+        });
+      });
+
+    // Fetch storage stats
+    api.get('/usage')
+      .then(res => res.json())
+      .then(data => {
+        if (data.used !== undefined) {
+          setStorageStats({ used: data.used, limit: data.limit });
+        }
+      })
+      .catch(err => console.error("Failed to fetch storage stats", err));
+  }, []);
+
+  const handleLogout = useCallback(async () => {
     try {
       // Best effort logout
       await api.get('/auth/logout').catch(() => {}); 
@@ -18,16 +55,14 @@ export default function Navbar() {
       localStorage.removeItem('token');
       navigate('/login');
     }
-  };
+  }, [navigate]);
 
   return (
     <>
       <header className="sticky top-0 z-50 px-0 sm:px-6 py-4 transition-colors duration-300">
         <nav className="glass bg-white/60 backdrop-blur-xl rounded-none sm:rounded-2xl px-6 py-3 flex justify-between items-center shadow-lg shadow-indigo-500/5 mx-auto max-w-7xl border border-white/40">
           <h1 className="text-xl text-gray-800 font-bold m-0 flex items-center gap-2 tracking-tight">
-            <div className="bg-indigo-500 p-1.5 rounded-lg w-8 h-8 flex items-center justify-center shadow-md shadow-indigo-500/30">
-              <img src="/logo.svg" alt="NubesVault" className="w-full h-full brightness-0 invert" />
-            </div>
+            <img src="/logo.svg" alt="NubesVault" className="w-8 h-8" />
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">NubesVault</span>
           </h1>
           <div className="flex items-center gap-4">
@@ -39,12 +74,100 @@ export default function Navbar() {
               <i className="fas fa-history text-lg group-hover:rotate-12 transition-transform"></i>
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
             </button>
-            <button 
-              onClick={handleLogout} 
-              className="bg-white/50 hover:bg-red-50 text-red-500 border border-red-100 py-2 px-4 rounded-xl cursor-pointer font-semibold transition-all hover:shadow-md text-sm active:scale-95 flex items-center gap-2"
-            >
-              <i className="fas fa-sign-out-alt"></i> <span className="hidden sm:inline">Logout</span>
-            </button>
+            
+            {/* User Profile Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md hover:shadow-lg transition-all hover:scale-105 border-2 border-white"
+              >
+                <span className="text-sm">{userProfile.initial}</span>
+              </button>
+              
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)}></div>
+                  <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-fade-in">
+                    {/* User Info Header */}
+                    <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                          {userProfile.initial}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900">{userProfile.name}</h3>
+                          <p className="text-sm text-gray-500">{userProfile.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Storage Info */}
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700">Storage Used</span>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {Math.round((storageStats.used / storageStats.limit) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((storageStats.used / storageStats.limit) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {(storageStats.used / (1024 * 1024 * 1024)).toFixed(2)} GB of {(storageStats.limit / (1024 * 1024 * 1024)).toFixed(0)} GB used
+                      </p>
+                    </div>
+                    
+                    {/* Menu Items */}
+                    <div className="p-2">
+                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                          <i className="fas fa-user text-sm"></i>
+                        </div>
+                        <span className="font-medium text-gray-700">Account Settings</span>
+                      </button>
+                      
+                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
+                        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                          <i className="fas fa-cog text-sm"></i>
+                        </div>
+                        <span className="font-medium text-gray-700">Preferences</span>
+                      </button>
+                      
+                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                          <i className="fas fa-hdd text-sm"></i>
+                        </div>
+                        <span className="font-medium text-gray-700">Manage Storage</span>
+                      </button>
+                      
+                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                          <i className="fas fa-question-circle text-sm"></i>
+                        </div>
+                        <span className="font-medium text-gray-700">Help & Support</span>
+                      </button>
+                    </div>
+                    
+                    {/* Logout */}
+                    <div className="p-2 border-t border-gray-100">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 transition-colors text-left group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                          <i className="fas fa-sign-out-alt text-sm"></i>
+                        </div>
+                        <span className="font-medium text-red-600">Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </nav>
       </header>

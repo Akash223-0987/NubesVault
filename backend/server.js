@@ -9,6 +9,7 @@ const session = require("express-session");
 require("dotenv").config();
 const authMiddleware = require("./middleware/authMiddleware");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 require("./passportConfig");
 
 const app = express();
@@ -45,6 +46,7 @@ mongoose
   });
 
 app.use("/auth", authRoutes);
+app.use("/user", authMiddleware, userRoutes);
 
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
@@ -151,7 +153,7 @@ app.get("/usage", authMiddleware, (req, res) => {
   }
 
   // Define a storage limit (e.g., 1 GB)
-  const limit = 1 * 1024 * 1024 * 1024; // 1 GB in bytes
+  const limit = 20 * 1024 * 1024 * 1024; // 1 GB in bytes
 
   res.json({
     used: totalSize,

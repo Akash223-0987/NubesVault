@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { api, API_URL } from '../api';
 
 interface FileListProps {
@@ -129,11 +129,97 @@ export default function FileList({ refreshTrigger }: FileListProps) {
     return ['png', 'jpg', 'jpeg', 'gif', 'pdf', 'mp4', 'webm', 'mp3'].includes(ext || '');
   };
 
+  const getFileType = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext || '')) return 'image';
+    if (ext === 'pdf') return 'pdf';
+    if (['mp4', 'webm', 'mov'].includes(ext || '')) return 'video';
+    if (['mp3', 'wav', 'ogg'].includes(ext || '')) return 'audio';
+    if (['txt', 'md', 'json', 'js', 'ts', 'tsx', 'jsx', 'css', 'html'].includes(ext || '')) return 'text';
+    return 'other';
+  };
+
+  const [currentFileName, setCurrentFileName] = useState<string>('');
+  const [zoomLevel, setZoomLevel] = useState(100);
+
+  const handlePreviewWithName = (file: string) => {
+    setCurrentFileName(file);
+    handlePreview(file);
+    setZoomLevel(100);
+  };
+
   const renderPreviewContent = () => {
     if (!previewFile) return null;
-    return (
-       <iframe src={previewFile} className="w-full h-full border-0 rounded-lg bg-white" title="Preview" />
-    );
+    
+    const fileType = getFileType(currentFileName);
+    
+    switch (fileType) {
+      case 'image':
+        return (
+          <div className="w-full h-full flex items-center justify-center p-8 overflow-auto bg-gray-950">
+            <img 
+              src={previewFile} 
+              alt="Preview" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-transform duration-300"
+              style={{ transform: `scale(${zoomLevel / 100})` }}
+            />
+          </div>
+        );
+      
+      case 'pdf':
+        return (
+          <iframe 
+            id="preview-iframe"
+            src={previewFile} 
+            className="w-full h-full border-0 bg-white" 
+            title="PDF Preview"
+            allowFullScreen
+          />
+        );
+      
+      case 'video':
+        return (
+          <div className="w-full h-full flex items-center justify-center p-8 bg-gray-950">
+            <video 
+              src={previewFile} 
+              controls 
+              className="max-w-full max-h-full rounded-lg shadow-2xl"
+              style={{ maxHeight: '80vh' }}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        );
+      
+      case 'audio':
+        return (
+          <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-gray-900 to-gray-950">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-32 h-32 rounded-full flex items-center justify-center mb-8 shadow-2xl">
+              <i className="fas fa-music text-white text-5xl"></i>
+            </div>
+            <h3 className="text-white text-xl font-semibold mb-6">{getDisplayName(currentFileName)}</h3>
+            <audio 
+              src={previewFile} 
+              controls 
+              className="w-full max-w-md shadow-lg"
+              autoPlay
+            >
+              Your browser does not support the audio tag.
+            </audio>
+          </div>
+        );
+      
+      default:
+        return (
+          <iframe 
+            id="preview-iframe"
+            src={previewFile} 
+            className="w-full h-full border-0 bg-white" 
+            title="Preview"
+            allowFullScreen
+          />
+        );
+    }
   };
 
   if (loading) return (
@@ -145,44 +231,88 @@ export default function FileList({ refreshTrigger }: FileListProps) {
   return (
     <div className="w-full relative">
       {previewFile && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in" onClick={closePreview}>
-          {/* Controls - Floating above everything */}
-          <div className="fixed top-6 right-6 z-[200] flex gap-3" onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={toggleFullScreen}
-              className="bg-gray-900/80 hover:bg-indigo-600 text-white p-3 rounded-full backdrop-blur-md shadow-lg border border-white/10 transition-all hover:scale-105 flex items-center justify-center group"
-              title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
-            >
-              <i className={`fas ${isFullScreen ? 'fa-compress' : 'fa-expand'} text-lg group-hover:rotate-180 transition-transform duration-300`}></i>
-            </button>
-            <button 
-              onClick={closePreview}
-              className="bg-gray-900/80 hover:bg-red-500 text-white p-3 rounded-full backdrop-blur-md shadow-lg border border-white/10 transition-all hover:scale-105 flex items-center justify-center group"
-              title="Close"
-            >
-              <i className="fas fa-times text-xl group-hover:rotate-90 transition-transform duration-300"></i>
-            </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in" onClick={closePreview}>
+          {/* Top Bar with File Name */}
+          <div className="fixed top-0 left-0 right-0 z-[200] bg-gray-900/90 backdrop-blur-xl border-b border-gray-700/50 px-6 py-4" onClick={(e) => e.stopPropagation()}>
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <i className={`fas ${getFileType(currentFileName) === 'image' ? 'fa-image' : getFileType(currentFileName) === 'pdf' ? 'fa-file-pdf' : getFileType(currentFileName) === 'video' ? 'fa-video' : getFileType(currentFileName) === 'audio' ? 'fa-music' : 'fa-file'} text-white`}></i>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold">{getDisplayName(currentFileName)}</h3>
+                  <p className="text-gray-400 text-sm">{getFileType(currentFileName).toUpperCase()} File</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Zoom Controls for Images */}
+                {getFileType(currentFileName) === 'image' && (
+                  <div className="flex items-center gap-2 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+                    <button
+                      onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
+                      className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors"
+                      title="Zoom Out"
+                    >
+                      <i className="fas fa-minus text-xs"></i>
+                    </button>
+                    <span className="text-white text-sm font-medium min-w-[60px] text-center">{zoomLevel}%</span>
+                    <button
+                      onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+                      className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors"
+                      title="Zoom In"
+                    >
+                      <i className="fas fa-plus text-xs"></i>
+                    </button>
+                    <button
+                      onClick={() => setZoomLevel(100)}
+                      className="ml-2 px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium transition-colors"
+                      title="Reset Zoom"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
+                
+                {/* Download Button */}
+                <button
+                  onClick={() => handleDownload(currentFileName)}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 transition-colors shadow-lg"
+                  title="Download"
+                >
+                  <i className="fas fa-download"></i>
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+                
+                {/* Fullscreen Toggle */}
+                <button 
+                  onClick={toggleFullScreen}
+                  className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center transition-colors border border-gray-700"
+                  title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  <i className={`fas ${isFullScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                </button>
+                
+                {/* Close Button */}
+                <button 
+                  onClick={closePreview}
+                  className="w-10 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors shadow-lg"
+                  title="Close"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
+          {/* Content Area */}
           <div 
-            className="bg-gray-900 rounded-2xl flex flex-col relative shadow-2xl transition-all duration-300 overflow-hidden border border-gray-700 w-full max-w-6xl h-[85vh] z-[150]"
+            className="w-full h-full pt-20 pb-4 px-4"
             onClick={(e) => e.stopPropagation()}
           >
-              {/* Content Area */}
-              <div className="flex-1 w-full h-full relative bg-gray-950">
-                 {/* Spinner */}
-                 <div className="absolute inset-0 flex items-center justify-center z-0">
-                    <div className="spinner !border-gray-800 !border-t-indigo-500"></div>
-                 </div>
-                 {/* iFrame */}
-                 <iframe 
-                    id="preview-iframe"
-                    src={previewFile} 
-                    className="absolute inset-0 w-full h-full border-0 z-10 bg-white" 
-                    title="Preview" 
-                    allowFullScreen
-                 />
-              </div>
+            <div className="w-full h-full max-w-7xl mx-auto bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-700">
+              {renderPreviewContent()}
+            </div>
           </div>
         </div>
       )}
@@ -211,7 +341,7 @@ export default function FileList({ refreshTrigger }: FileListProps) {
                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-x-2 group-hover:translate-x-0">
                     {isPreviewable(file) && (
                       <button 
-                        onClick={() => handlePreview(file)}
+                        onClick={() => handlePreviewWithName(file)}
                         className="w-8 h-8 rounded-full bg-white/80 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 flex items-center justify-center transition-colors shadow-sm"
                         title="Preview"
                       >
