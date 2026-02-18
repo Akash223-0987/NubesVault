@@ -7,7 +7,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${(process.env.BACKEND_URL || "http://localhost:5000").replace(/\/$/, "")}/auth/google/callback`,
+      // Hardcoded production URL to fix redirect_uri_mismatch
+      callbackURL: "https://nubesvault.onrender.com/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
