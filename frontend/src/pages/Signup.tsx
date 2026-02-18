@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, API_URL } from '../api';
 
@@ -8,6 +8,13 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   // Password Strength Logic
   const getStrength = (pass: string) => {
@@ -47,10 +54,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Signup Form - Centered */}
-      <div className="w-full flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
+    <div className="h-screen w-full bg-gray-50 flex flex-col justify-center items-center overflow-hidden">
+        <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-sm border border-gray-100 mx-auto">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">Create an account</h2>
             <p className="mt-2 text-sm text-gray-500">
@@ -205,7 +210,6 @@ export default function Signup() {
               </a>
             </p>
           </div>
-        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen relative overflow-hidden font-sans text-gray-900 bg-transparent">
+    <div className="min-h-screen relative overflow-hidden font-sans text-gray-900 bg-transparent pb-10">
       {/* Background Elements are handled by global css on body, but we can add specific ones here if needed */}
       
       {/* Navbar */}
@@ -19,7 +19,7 @@ export default function Landing() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             {localStorage.getItem('token') ? (
               <button 
                 onClick={() => navigate('/dashboard')}
@@ -44,6 +44,11 @@ export default function Landing() {
               </>
             )}
           </div>
+          
+          {/* Mobile Menu Button - simplified for now, typically would toggle a modal */}
+          <div className="sm:hidden">
+             <button onClick={() => navigate('/login')} className="p-2 text-indigo-600 font-semibold">Log In</button>
+          </div>
         </div>
       </nav>
 
@@ -51,13 +56,7 @@ export default function Landing() {
       <main className="max-w-7xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center text-center relative z-10">
         
         {/* Floating badge */}
-        <div className="animate-fade-in inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/40 backdrop-blur-md border border-white/50 shadow-sm mb-8">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-          </span>
-          <span className="text-sm font-medium text-indigo-900">v2.0 is now live</span>
-        </div>
+
 
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-6 max-w-4xl animate-fade-in">
           The <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">workspace</span> for your creative journey.
@@ -165,10 +164,6 @@ export default function Landing() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-10 text-center text-gray-500 text-sm relative z-10 border-t border-white/20 bg-white/10 backdrop-blur-lg">
-         <p>© 2026 NubesVault. All rights reserved.</p>
-      </footer>
     </div>
   );
 }

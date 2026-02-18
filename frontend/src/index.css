@@ -13,15 +13,21 @@
   inherits: false;
 }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 body {
-  @apply min-h-screen font-sans text-gray-900 m-0 p-0 antialiased;
+  @apply font-sans text-gray-900 antialiased;
   background-color: #f0f4ff;
   background-image: 
       radial-gradient(at 0% 0%, hsla(253,16%,96%,1) 0, transparent 50%), 
       radial-gradient(at 50% 0%, hsla(225,39%,96%,1) 0, transparent 50%), 
       radial-gradient(at 100% 0%, hsla(339,49%,96%,1) 0, transparent 50%);
   position: relative;
-  overflow-x: hidden;
   font-family: var(--font-body);
 }
 

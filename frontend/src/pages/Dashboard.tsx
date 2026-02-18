@@ -54,7 +54,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 transition-colors duration-300 pb-10">
       <Navbar />
       
       <main className="container mx-auto px-6 py-10 max-w-7xl animate-fade-in">
@@ -69,10 +69,10 @@ export default function Dashboard() {
         </div>
 
         {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
           
           {/* 1. Upload Section (Large - 2x2) */}
-          <div className="md:col-span-2 md:row-span-2 glass-card rounded-3xl p-1 relative overflow-hidden group">
+          <div className="col-span-1 sm:col-span-2 row-span-2 glass-card rounded-3xl p-1 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 z-0"></div>
             <div className="relative z-10 h-full flex flex-col">
               <div className="p-6 pb-2">
@@ -91,7 +91,7 @@ export default function Dashboard() {
           </div>
 
           {/* 2. Quick Actions (Standard - 1x2 to fill vertical space) */}
-          <div className="md:col-span-1 md:row-span-2 glass-card rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group">
+          <div className="col-span-1 sm:col-span-1 row-span-2 glass-card rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/10 to-red-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
              
              <div>
@@ -128,7 +128,7 @@ export default function Dashboard() {
           </div>
           
            {/* 5. Main File List (Full Width) */}
-           <div className="md:col-span-3 lg:col-span-4 glass-card rounded-3xl overflow-hidden min-h-[400px]">
+           <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 glass-card rounded-3xl overflow-hidden min-h-[400px]">
               <div className="p-6 border-b border-gray-100/50 flex justify-between items-center bg-white/30 backdrop-blur-sm">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                   <i className="fas fa-layer-group text-indigo-500"></i> Your Files
@@ -146,6 +146,8 @@ export default function Dashboard() {
 
 
       </main>
+
+
 
       {/* Floating Storage Widget */}
       <StorageWidget />

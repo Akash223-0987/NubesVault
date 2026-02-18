@@ -76,97 +76,100 @@ export default function Navbar() {
             </button>
             
             {/* User Profile Dropdown */}
-            <div className="relative">
+            <div 
+              className="relative py-2 group"
+              onMouseEnter={() => setShowUserMenu(true)}
+              onMouseLeave={() => setShowUserMenu(false)}
+            >
               <button 
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md hover:shadow-lg transition-all hover:scale-105 border-2 border-white"
+                className="w-10 h-10 flex items-center justify-center focus:outline-none transition-transform active:scale-95 mx-2"
+                aria-label="User Menu"
               >
-                <span className="text-sm">{userProfile.initial}</span>
+                <i className={`fas fa-user-circle text-4xl transition-colors duration-300 ${showUserMenu ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-500'}`}></i>
               </button>
               
               {/* Dropdown Menu */}
-              {showUserMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)}></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-fade-in">
-                    {/* User Info Header */}
-                    <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                          {userProfile.initial}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-900">{userProfile.name}</h3>
-                          <p className="text-sm text-gray-500">{userProfile.email}</p>
-                        </div>
+              <div 
+                className={`absolute right-0 top-full pt-2 w-80 z-50 origin-top-right transition-all duration-200 ease-out ${showUserMenu ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'}`}
+              >
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                  {/* User Info Header */}
+                  <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-indigo-600 font-bold text-lg shadow-sm border border-indigo-100">
+                        <i className="fas fa-user text-xl"></i>
                       </div>
-                    </div>
-                    
-                    {/* Storage Info */}
-                    <div className="p-4 border-b border-gray-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">Storage Used</span>
-                        <span className="text-sm font-bold text-indigo-600">
-                          {Math.round((storageStats.used / storageStats.limit) * 100)}%
-                        </span>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900">{userProfile.name}</h3>
+                        <p className="text-sm text-gray-500">{userProfile.email}</p>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min((storageStats.used / storageStats.limit) * 100, 100)}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {(storageStats.used / (1024 * 1024 * 1024)).toFixed(2)} GB of {(storageStats.limit / (1024 * 1024 * 1024)).toFixed(0)} GB used
-                      </p>
-                    </div>
-                    
-                    {/* Menu Items */}
-                    <div className="p-2">
-                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                          <i className="fas fa-user text-sm"></i>
-                        </div>
-                        <span className="font-medium text-gray-700">Account Settings</span>
-                      </button>
-                      
-                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
-                          <i className="fas fa-cog text-sm"></i>
-                        </div>
-                        <span className="font-medium text-gray-700">Preferences</span>
-                      </button>
-                      
-                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                          <i className="fas fa-hdd text-sm"></i>
-                        </div>
-                        <span className="font-medium text-gray-700">Manage Storage</span>
-                      </button>
-                      
-                      <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                          <i className="fas fa-question-circle text-sm"></i>
-                        </div>
-                        <span className="font-medium text-gray-700">Help & Support</span>
-                      </button>
-                    </div>
-                    
-                    {/* Logout */}
-                    <div className="p-2 border-t border-gray-100">
-                      <button 
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 transition-colors text-left group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
-                          <i className="fas fa-sign-out-alt text-sm"></i>
-                        </div>
-                        <span className="font-medium text-red-600">Logout</span>
-                      </button>
                     </div>
                   </div>
-                </>
-              )}
+                  
+                  {/* Storage Info */}
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">Storage Used</span>
+                      <span className="text-sm font-bold text-indigo-600">
+                        {Math.round((storageStats.used / storageStats.limit) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((storageStats.used / storageStats.limit) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {(storageStats.used / (1024 * 1024 * 1024)).toFixed(2)} GB of {(storageStats.limit / (1024 * 1024 * 1024)).toFixed(0)} GB used
+                    </p>
+                  </div>
+                  
+                  {/* Menu Items */}
+                  <div className="p-2">
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group/item">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover/item:scale-110 transition-transform">
+                        <i className="fas fa-user text-sm"></i>
+                      </div>
+                      <span className="font-medium text-gray-700">Account Settings</span>
+                    </button>
+                    
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group/item">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 group-hover/item:scale-110 transition-transform">
+                        <i className="fas fa-cog text-sm"></i>
+                      </div>
+                      <span className="font-medium text-gray-700">Preferences</span>
+                    </button>
+                    
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group/item">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover/item:scale-110 transition-transform">
+                        <i className="fas fa-hdd text-sm"></i>
+                      </div>
+                      <span className="font-medium text-gray-700">Manage Storage</span>
+                    </button>
+                    
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left group/item">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover/item:scale-110 transition-transform">
+                        <i className="fas fa-question-circle text-sm"></i>
+                      </div>
+                      <span className="font-medium text-gray-700">Help & Support</span>
+                    </button>
+                  </div>
+                  
+                  {/* Logout */}
+                  <div className="p-2 border-t border-gray-100">
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 transition-colors text-left group/item"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 group-hover/item:scale-110 transition-transform">
+                        <i className="fas fa-sign-out-alt text-sm"></i>
+                      </div>
+                      <span className="font-medium text-red-600">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </nav>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, API_URL } from '../api';
 
@@ -8,6 +8,13 @@ export default function Login() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +27,7 @@ export default function Login() {
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userEmail', data.user.email);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         setError(data.msg || 'Login failed');
       }
@@ -35,7 +42,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8">
+    <div className="h-screen w-full bg-gray-50 flex flex-col justify-center items-center overflow-hidden">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
         <div className="flex justify-center items-center gap-3 mb-4">
