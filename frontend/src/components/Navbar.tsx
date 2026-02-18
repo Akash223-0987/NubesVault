@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
@@ -17,9 +17,11 @@ export default function Navbar() {
       .then(data => {
         setUserProfile({
           name: data.name || 'User',
-          email: data.email || localStorage.getItem('userEmail') || 'user@example.com',
+          email: data.email || localStorage.getItem('userEmail') || '',
           initial: (data.name || 'U').charAt(0).toUpperCase()
         });
+        // Cache email for fallback
+        if (data.email) localStorage.setItem('userEmail', data.email);
       })
       .catch(err => {
         console.error("Failed to fetch user profile", err);
@@ -49,6 +51,7 @@ export default function Navbar() {
       await api.get('/auth/logout').catch(() => {}); 
       localStorage.removeItem('token');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('user');
       navigate('/login');
     } catch (err) {
       console.error("Logout failed", err);
@@ -61,7 +64,7 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-50 px-0 sm:px-6 py-4 transition-colors duration-300">
         <nav className="glass bg-white/60 backdrop-blur-xl rounded-none sm:rounded-2xl px-6 py-3 flex justify-between items-center shadow-lg shadow-indigo-500/5 mx-auto max-w-7xl border border-white/40">
-          <h1 className="text-xl text-gray-800 font-bold m-0 flex items-center gap-2 tracking-tight">
+          <h1 className="text-xl text-gray-800 font-bold m-0 flex items-center gap-2 tracking-tight cursor-pointer" onClick={() => navigate('/dashboard')}>
             <img src="/logo.svg" alt="NubesVault" className="w-8 h-8" />
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">NubesVault</span>
           </h1>
@@ -97,11 +100,11 @@ export default function Navbar() {
                   <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-indigo-600 font-bold text-lg shadow-sm border border-indigo-100">
-                        <i className="fas fa-user text-xl"></i>
+                        {userProfile.initial}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-900">{userProfile.name}</h3>
-                        <p className="text-sm text-gray-500">{userProfile.email}</p>
+                      <div className="flex-1 overflow-hidden">
+                        <h3 className="font-bold text-gray-900 truncate" title={userProfile.name}>{userProfile.name}</h3>
+                        <p className="text-sm text-gray-500 truncate" title={userProfile.email}>{userProfile.email}</p>
                       </div>
                     </div>
                   </div>
