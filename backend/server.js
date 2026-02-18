@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const fsPromises = require("fs").promises; // Use fs.promises
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -49,15 +50,17 @@ const UPLOAD_ROOT = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_ROOT)) fs.mkdirSync(UPLOAD_ROOT);
 
 // Helper to get user-specific upload directory
-const getUserAndDir = (req) => {
+const getUserAndDir = async (req) => {
   // authMiddleware sets req.userId (JWT)
   // passport sets req.user (Session)
   const userId = req.userId || (req.user ? req.user.id : null);
   if (!userId) throw new Error("User not authenticated");
   
   const userDir = path.join(UPLOAD_ROOT, userId.toString());
-  if (!fs.existsSync(userDir)) {
-    fs.mkdirSync(userDir, { recursive: true });
+  try {
+    await fsPromises.access(userDir);
+  } catch {
+    await fsPromises.mkdir(userDir, { recursive: true });
   }
   return { userId, userDir };
 };
@@ -69,9 +72,9 @@ app.use("/uploads", (req, res, next) => {
 });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: async (req, file, cb) => {
     try {
-      const { userDir } = getUserAndDir(req);
+      const { userDir } = await getUserAndDir(req);
       cb(null, userDir);
     } catch (err) {
       cb(err);
@@ -89,10 +92,10 @@ app.post("/upload", authMiddleware, upload.single("file"), (req, res) => {
   });
 });
 
-app.get("/files", authMiddleware, (req, res) => {
+app.get("/files", authMiddleware, async (req, res) => {
   try {
-    const { userDir } = getUserAndDir(req);
-    const files = fs.readdirSync(userDir);
+    const { userDir } = await getUserAndDir(req);
+    const files = await fsPromises.readdir(userDir);
     res.json(files);
   } catch (err) {
     console.error(err);
@@ -100,9 +103,9 @@ app.get("/files", authMiddleware, (req, res) => {
   }
 });
 
-app.delete("/delete/:filename", authMiddleware, (req, res) => {
+app.delete("/delete/:filename", authMiddleware, async (req, res) => {
   try {
-    const { userDir } = getUserAndDir(req);
+    const { userDir } = await getUserAndDir(req);
     const filePath = path.join(userDir, req.params.filename);
     
     // Security check: prevent directory traversal
@@ -110,20 +113,24 @@ app.delete("/delete/:filename", authMiddleware, (req, res) => {
        return res.status(403).json({ success: false, message: "Invalid filepath" });
     }
 
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      await fsPromises.unlink(filePath);
       res.json({ success: true, message: "File deleted successfully" });
-    } else {
-      res.status(404).json({ success: false, message: "File not found" });
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        res.status(404).json({ success: false, message: "File not found" });
+      } else {
+        throw err;
+      }
     }
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-app.get("/download/:filename", authMiddleware, (req, res) => {
+app.get("/download/:filename", authMiddleware, async (req, res) => {
   try {
-    const { userDir } = getUserAndDir(req);
+    const { userDir } = await getUserAndDir(req);
     const decodedFilename = decodeURIComponent(req.params.filename);
     const filePath = path.join(userDir, decodedFilename);
 
@@ -131,22 +138,24 @@ app.get("/download/:filename", authMiddleware, (req, res) => {
        return res.status(403).json({ error: "Access denied" });
     }
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "File not found" });
+    try {
+      await fsPromises.access(filePath);
+      const originalName = decodedFilename.split("-").slice(1).join("-");
+      res.setHeader("Content-Disposition", `attachment; filename=\"${originalName}\"`);
+      const stream = fs.createReadStream(filePath);
+      stream.on("error", () => res.status(500).end());
+      stream.pipe(res);
+    } catch (err) {
+       return res.status(404).json({ error: "File not found" });
     }
-    const originalName = decodedFilename.split("-").slice(1).join("-");
-    res.setHeader("Content-Disposition", `attachment; filename=\"${originalName}\"`);
-    const stream = fs.createReadStream(filePath);
-    stream.on("error", () => res.status(500).end());
-    stream.pipe(res);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-app.get("/view/:filename", authMiddleware, (req, res) => {
+app.get("/view/:filename", authMiddleware, async (req, res) => {
   try {
-    const { userDir } = getUserAndDir(req);
+    const { userDir } = await getUserAndDir(req);
     const decodedFilename = decodeURIComponent(req.params.filename);
     const filePath = path.join(userDir, decodedFilename);
     
@@ -154,60 +163,74 @@ app.get("/view/:filename", authMiddleware, (req, res) => {
        return res.status(403).json({ error: "Access denied" });
     }
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "File not found" });
+    try {
+      await fsPromises.access(filePath);
+      
+      // Determine content type based on extension
+      const ext = path.extname(decodedFilename).toLowerCase();
+      let contentType = 'application/octet-stream';
+      
+      const mimeTypes = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.mp3': 'audio/mpeg',
+        '.json': 'application/json',
+        '.html': 'text/html'
+      };
+
+      if (mimeTypes[ext]) {
+        contentType = mimeTypes[ext];
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${decodedFilename}"`);
+      
+      const stream = fs.createReadStream(filePath);
+      stream.on('error', () => res.status(500).end());
+      stream.pipe(res);
+    } catch (err) {
+       return res.status(404).json({ error: "File not found" });
     }
-
-    // Determine content type based on extension
-    const ext = path.extname(decodedFilename).toLowerCase();
-    let contentType = 'application/octet-stream';
-    
-    const mimeTypes = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.pdf': 'application/pdf',
-      '.txt': 'text/plain',
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.mp3': 'audio/mpeg',
-      '.json': 'application/json',
-      '.html': 'text/html'
-    };
-
-    if (mimeTypes[ext]) {
-      contentType = mimeTypes[ext];
-    }
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${decodedFilename}"`);
-    
-    const stream = fs.createReadStream(filePath);
-    stream.on('error', () => res.status(500).end());
-    stream.pipe(res);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-app.get("/usage", authMiddleware, (req, res) => {
+app.get("/usage", authMiddleware, async (req, res) => {
   try {
-    const { userDir } = getUserAndDir(req);
+    const { userDir } = await getUserAndDir(req);
     let totalSize = 0;
     
-    if (fs.existsSync(userDir)) {
-      const files = fs.readdirSync(userDir);
-      files.forEach(file => {
+    try {
+      const files = await fsPromises.readdir(userDir);
+      
+      // Use Promise.all for parallel resizing which is much faster
+      const sizes = await Promise.all(files.map(async file => {
         const filePath = path.join(userDir, file);
-        if (fs.existsSync(filePath)) {
-            const stats = fs.statSync(filePath);
-            totalSize += stats.size;
+        try {
+            const stats = await fsPromises.stat(filePath);
+            return stats.size;
+        } catch {
+            return 0;
         }
-      });
+      }));
+      
+      totalSize = sizes.reduce((acc, size) => acc + size, 0);
+
+    } catch (err) {
+        // Directory might not exist yet, verify error
+        if (err.code !== 'ENOENT') {
+            throw err;
+        }
     }
 
-    // Define a storage limit (e.g., 1 GB)
+    // Define a storage limit (e.g., 20 GB)
     const limit = 20 * 1024 * 1024 * 1024; // 20 GB in bytes
 
     res.json({
@@ -228,3 +251,4 @@ app.get("/auth/logout", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
